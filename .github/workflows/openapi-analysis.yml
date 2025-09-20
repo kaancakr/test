@@ -60,7 +60,7 @@ jobs:
           **Schemas**: ${analysis.summary ? analysis.summary.schemas_count : 0}
           
           ${analysis.suggestions && analysis.suggestions.length > 0 ? 
-            `### 📋 Top Suggestions:\n\n${analysis.suggestions.slice(0, 5).map(s => `- ${s}`).join('\n')}` : 
+            `### �� Top Suggestions:\n\n${analysis.suggestions.slice(0, 5).map(s => `- ${s}`).join('\n')}` : 
             '### ✅ No suggestions found! Your OpenAPI specification looks great! 🎉'
           }
           
