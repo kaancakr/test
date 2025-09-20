@@ -1,0 +1,81 @@
+name: OpenAPI Analysis
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - '**/*.json'
+      - '**/*.yaml'
+      - '**/*.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - '**/*.json'
+      - '**/*.yaml'
+      - '**/*.yml'
+  workflow_dispatch:
+
+jobs:
+  analyze-openapi:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: OpenAPI Analyzer
+      uses: ApyGuard/apyguard_openapi_analysis@v1
+      with:
+        # Path to your OpenAPI/Swagger specification file
+        file: test-swagger.json
+        
+        # Optional: Specify the output format (json, html, markdown)
+        output-format: json
+        
+        # Optional: Specify output file path
+        output-file: analysis-results.json
+        
+        # Optional: Enable detailed analysis
+        detailed-analysis: true
+        
+        # Optional: Include security analysis
+        security-analysis: true
+        
+        # Optional: Include performance analysis
+        performance-analysis: true
+        
+    - name: Upload analysis results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: openapi-analysis-results
+        path: analysis-results.json
+        retention-days: 30
+        
+    - name: Comment on PR
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          try {
+            const results = JSON.parse(fs.readFileSync('analysis-results.json', 'utf8'));
+            const comment = `## OpenAPI Analysis Results
+          
+          **Analysis completed successfully!**
+          
+          - **Total Endpoints**: ${results.endpoints?.length || 'N/A'}
+          - **Security Issues**: ${results.security?.issues?.length || 0}
+          - **Performance Issues**: ${results.performance?.issues?.length || 0}
+          
+          Detailed results are available in the workflow artifacts.`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+          } catch (error) {
+            console.log('Could not read analysis results:', error.message);
+          }
