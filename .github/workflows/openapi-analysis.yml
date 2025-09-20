@@ -1,4 +1,4 @@
-name: OpenAPI Analysis
+name: OpenAPI Analysis (Workaround)
 
 on:
   push:
@@ -23,19 +23,39 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       
-    - name: OpenAPI Analyzer
-      id: analyze
-      uses: ApyGuard/apyguard_openapi_analysis@main
+    - name: Set up Python
+      uses: actions/setup-python@v4
       with:
-        # Path to your OpenAPI/Swagger specification file
-        file: test-swagger.json
+        python-version: '3.11'
         
-        # Output format (json or summary)
-        output_format: json
-        
-    - name: Save analysis results
+    - name: Install dependencies
       run: |
-        echo '${{ steps.analyze.outputs.analysis }}' > analysis-results.json
+        pip install requests PyYAML openapi-spec-validator
+        
+    - name: Download analyzer script
+      run: |
+        curl -o analyzer.py https://raw.githubusercontent.com/ApyGuard/openapi_analyzer/main/analyzer.py
+        
+    - name: Run OpenAPI Analysis
+      id: analyze
+      run: |
+        python analyzer.py test-swagger.json > analysis-results.json
+        echo "analysis<<EOF" >> $GITHUB_OUTPUT
+        cat analysis-results.json >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+        
+        # Extract individual values for outputs
+        is_valid=$(python -c "import json; data=json.load(open('analysis-results.json')); print(data.get('is_valid', False))")
+        suggestions_count=$(python -c "import json; data=json.load(open('analysis-results.json')); print(len(data.get('suggestions', [])))")
+        operations_count=$(python -c "import json; data=json.load(open('analysis-results.json')); print(data.get('summary', {}).get('operations_count', 0))")
+        paths_count=$(python -c "import json; data=json.load(open('analysis-results.json')); print(data.get('summary', {}).get('paths_count', 0))")
+        schemas_count=$(python -c "import json; data=json.load(open('analysis-results.json')); print(data.get('summary', {}).get('schemas_count', 0))")
+        
+        echo "is_valid=$is_valid" >> $GITHUB_OUTPUT
+        echo "suggestions_count=$suggestions_count" >> $GITHUB_OUTPUT
+        echo "operations_count=$operations_count" >> $GITHUB_OUTPUT
+        echo "paths_count=$paths_count" >> $GITHUB_OUTPUT
+        echo "schemas_count=$schemas_count" >> $GITHUB_OUTPUT
         
     - name: Upload analysis results
       uses: actions/upload-artifact@v4
@@ -60,7 +80,7 @@ jobs:
           **Schemas**: ${analysis.summary ? analysis.summary.schemas_count : 0}
           
           ${analysis.suggestions && analysis.suggestions.length > 0 ? 
-            `### �� Top Suggestions:\n\n${analysis.suggestions.slice(0, 5).map(s => `- ${s}`).join('\n')}` : 
+            `### 📋 Top Suggestions:\n\n${analysis.suggestions.slice(0, 5).map(s => `- ${s}`).join('\n')}` : 
             '### ✅ No suggestions found! Your OpenAPI specification looks great! 🎉'
           }
           
