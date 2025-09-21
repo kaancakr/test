@@ -22,7 +22,7 @@
       "/users": {
         "get": {
           "summary": "Get all users",
-          "description": "Retrieve a list of all users in the system",
+          "description": "Retrieve a list of all users in the systems",
           "operationId": "getUsers",
           "tags": ["users"],
           "parameters": [
