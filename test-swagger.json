@@ -1,7 +1,7 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "Complex Enterprise API",
+    "title": "Complex  Enterprise API",
     "description": "A comprehensive enterprise API with various security, performance, and compliance issues for testing the OpenAPI Analyzer",
     "version": "2.1.0-beta",
     "contact": {
