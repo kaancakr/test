@@ -30,7 +30,7 @@ jobs:
       uses: ApyGuard/apyguard_openapi_analysis@main
       with:
         # Change this to your OpenAPI file path
-        file: test-swagger.json
+        file: Apyguard Kanban vulnapi.yaml
         output_format: json
         
     - name: Display Results
