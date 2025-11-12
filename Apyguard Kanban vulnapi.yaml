@@ -1,0 +1,97 @@
+openapi: 3.0.1
+info:
+  title: Vulnerable Demo API
+  version: "1.0.0"
+  description: |
+    This intentionally vulnerable OpenAPI definition includes:
+    - Missing authentication on some endpoints
+    - Insecure HTTP scheme
+    - Sensitive data exposure
+    - Lack of rate limiting
+    - Unvalidated input parameters
+
+servers:
+  - url: http://api.vuln.local   # VULN: HTTP (no TLS)
+    description: Insecure server (HTTP only)
+
+paths:
+  /users:
+    get:
+      summary: Get all users (no auth required)
+      description: Returns sensitive user data without authentication.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                    username:
+                      type: string
+                    password:    # VULN: Exposing passwords!
+                      type: string
+                    email:
+                      type: string
+
+  /users/{id}:
+    get:
+      summary: Get user by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string   # VULN: should be integer
+            pattern: ".*"  # VULN: weak pattern
+      responses:
+        "200":
+          description: OK
+
+  /login:
+    post:
+      summary: Insecure login endpoint
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        "200":
+          description: Token response (no expiration)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    example: "hardcoded-token-123"  # VULN: Hardcoded token
+  /admin/deleteAll:
+    delete:
+      summary: Dangerous admin endpoint
+      description: Deletes all data (no authentication)
+      responses:
+        "200":
+          description: All data deleted  # VULN: No auth, destructive action
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+security: []  # VULN: global security disabled
+
+x-rate-limit: none   # VULN: no rate limiting
